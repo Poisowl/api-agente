@@ -1,0 +1,84 @@
+{
+  "ejemplos_webhook": [
+    {
+      "nombre": "Inicio de conversación - WhatsApp",
+      "request": {
+        "channel": "whatsapp",
+        "from": "51987654321",
+        "message": {
+          "type": "text",
+          "content": "Hola"
+        },
+        "metadata": {
+          "profile_name": "Juan Perez",
+          "whatsapp_id": "51987654321",
+          "timestamp": "2026-01-28T10:15:00Z"
+        }
+      }
+    },
+    {
+      "nombre": "Seleccionar opción 1 - Sacar cita",
+      "request": {
+        "channel": "whatsapp",
+        "from": "51987654321",
+        "message": {
+          "type": "text",
+          "content": "1"
+        },
+        "metadata": {
+          "profile_name": "Juan Perez",
+          "whatsapp_id": "51987654321",
+          "timestamp": "2026-01-28T10:16:00Z"
+        }
+      }
+    },
+    {
+      "nombre": "Ingresar DNI",
+      "request": {
+        "channel": "whatsapp",
+        "from": "51987654321",
+        "message": {
+          "type": "text",
+          "content": "12345678"
+        },
+        "metadata": {
+          "profile_name": "Juan Perez",
+          "whatsapp_id": "51987654321",
+          "timestamp": "2026-01-28T10:17:00Z"
+        }
+      }
+    },
+    {
+      "nombre": "Seleccionar opción 2 - Cancelar cita",
+      "request": {
+        "channel": "whatsapp",
+        "from": "51987654321",
+        "message": {
+          "type": "text",
+          "content": "2"
+        },
+        "metadata": {
+          "profile_name": "Juan Perez",
+          "whatsapp_id": "51987654321",
+          "timestamp": "2026-01-28T10:18:00Z"
+        }
+      }
+    },
+    {
+      "nombre": "Usuario diferente - Telegram",
+      "request": {
+        "channel": "telegram",
+        "from": "123456789",
+        "message": {
+          "type": "text",
+          "content": "Hola"
+        },
+        "metadata": {
+          "profile_name": "Maria Garcia",
+          "telegram_id": "123456789",
+          "timestamp": "2026-01-28T11:00:00Z"
+        }
+      }
+    }
+  ]
+}

@@ -185,6 +185,12 @@ class Settings:
             "checkpoints",
         ]
 
+        # Redis Configuration
+        self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.REDIS_TTL_SECONDS = int(os.getenv("REDIS_TTL_SECONDS", "3600"))  # 1 hour
+        self.USE_REDIS = os.getenv("USE_REDIS", "true").lower() == "true"
+        self.DEFAULT_FLOW_ID = os.getenv("DEFAULT_FLOW_ID", "citas_essalud")
+
         # Rate Limiting Configuration
         self.RATE_LIMIT_DEFAULT = parse_list_from_env(
             "RATE_LIMIT_DEFAULT", ["200 per day", "50 per hour"]

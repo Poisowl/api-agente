@@ -1,9 +1,11 @@
+from typing import List
+
 from pydantic import BaseModel
 
 
 class Reply(BaseModel):
     type: str
-    content: str
+    content: List[str]
 
 class AgentResponse(BaseModel):
     reply: Reply

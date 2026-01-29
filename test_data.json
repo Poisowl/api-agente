@@ -1,0 +1,64 @@
+{
+  "ejemplos": [
+    {
+      "nombre": "Inicio de conversación - Bienvenida",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": "welcome",
+        "context": {},
+        "user_input": null
+      }
+    },
+    {
+      "nombre": "Después de bienvenida - Menú principal",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": "menu_principal",
+        "context": {},
+        "user_input": null
+      }
+    },
+    {
+      "nombre": "Seleccionar opción 1 - Sacar cita",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": "menu_principal",
+        "context": {},
+        "user_input": "1"
+      }
+    },
+    {
+      "nombre": "Ingresar DNI",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": "ingresar_dni",
+        "context": {},
+        "user_input": "12345678"
+      }
+    },
+    {
+      "nombre": "Seleccionar opción 2 - Cancelar cita",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": "menu_principal",
+        "context": {},
+        "user_input": "2"
+      }
+    },
+    {
+      "nombre": "Flujo completo - Inicio a fin",
+      "request": {
+        "conversation_id": "conv_12345",
+        "flow_id": "citas_essalud",
+        "current_node": null,
+        "context": {},
+        "user_input": null
+      }
+    }
+  ]
+}

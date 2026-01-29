@@ -2,14 +2,14 @@ from typing import Any, Dict, Optional
 from .base import BaseNode
 
 
-class MessageNode(BaseNode):
-    """Node that displays a message and automatically advances to the next node."""
+class EndNode(BaseNode):
+    """Node that ends the conversation flow."""
     
     def execute(self, context: Dict[str, Any], user_input: Optional[str] = None) -> Dict[str, Any]:
-        """Execute message node - always continues automatically."""
+        """Execute end node - finalizes the conversation."""
         messages = []
         
-        # Handle both single message and multiple messages
+        # Show final message
         if isinstance(self.node_data.get("message"), list):
             messages.extend(self.node_data["message"])
         elif isinstance(self.node_data.get("message"), str):
@@ -17,7 +17,7 @@ class MessageNode(BaseNode):
         
         return {
             "messages": messages,
-            "next_node": self.get_next_node(),
-            "should_continue": True,  # Message nodes always continue automatically
-            "handoff": False
+            "next_node": None,  # No next node
+            "should_continue": False,  # Stop processing
+            "handoff": True  # Signal conversation end
         }

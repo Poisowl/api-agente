@@ -1,0 +1,38 @@
+{
+    "flow_id": "citas_essalud",
+    "version": "1.0.0",
+    "start_node": "welcome",
+    "nodes": {
+        "welcome": {
+            "type": "message",
+            "message": [
+                "👋 Bienvenido al sistema de citas EsSalud",
+                "🔐 Todo dato es cifrado para su seguridad"
+            ],
+            "next": "menu_principal"
+        },
+        "menu_principal": {
+            "type": "menu",
+            "message": "Seleccione una opción:\n1️⃣ Sacar cita\n2️⃣ Cancelar cita",
+            "options": {
+                "1": "ingresar_dni",
+                "2": "cancelar"
+            }
+        },
+        "ingresar_dni": {
+            "type": "input",
+            "message": "🪪 Ingrese su DNI:",
+            "save_as": "dni",
+            "next": "fin"
+        },
+        "cancelar": {
+            "type": "message",
+            "message": "❌ Cancelación no disponible aún",
+            "next": "fin"
+        },
+        "fin": {
+            "type": "end",
+            "message": "✅ Gracias por usar el sistema"
+        }
+    }
+}

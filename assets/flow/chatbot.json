@@ -1,0 +1,48 @@
+{
+    "bot": {
+        "name": "ChatBotMultiCanal",
+        "version": "3.0",
+        "language": "es",
+        "defaultFlow": "bienvenida",
+        "sessionVariables": {},
+        "errorFlow": "error_handler",
+        "channels": [
+            "whatsapp",
+            "telegram",
+            "web"
+        ],
+        "flows": {
+            "bienvenida": {
+                "type": "message",
+                "content": "👩‍⚕️👨‍⚕️ Bienvenido a *“CONTRA EL DENGUE”*, el ChatBot de EsSalud que te brinda información y tamizaje de Dengue. 🏥💙",
+                "next": "preguntas_frecuentes"
+            },
+            "preguntas_frecuentes": {
+                "type": "qa",
+                "content": "¿En qué quieres que te ayudemos?",
+                "questions": [
+                    {
+                        "question": "¿Qué es el Dengue? 🦟",
+                        "answer": "El Dengue es una enfermedad infecciosa aguda causada por un virus que es trasmitida a través de un zancudo desde una persona enferma hacia otra que está sana.",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "question": "¿Cómo se transmite el dengue? 🤝",
+                        "answer": "El dengue se transmite cuando el zancudo *Aedes aegypti* pica a un enfermo y se contagia del virus; luego al picar a otras personas sanas transmite la enfermedad.",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "question": "¿Cómo prevenir el dengue? 🛡️",
+                        "answer": "✅ Lava, lava, lava bien (con la escobilla los depósitos donde almacenas agua). \n\n✅ Tapa, tapa, tapa bien (los depósitos donde almacenas agua para consumo).\n\n✅ Bota, bota, bota bien (los depósitos que no usas donde puede acumularse agua por accidente).",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "question": "Volver al menú principal",
+                        "answer": "",
+                        "next": "menu_principal"
+                    }
+                ]
+            }
+        }
+    }
+}

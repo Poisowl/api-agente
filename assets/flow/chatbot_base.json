@@ -1,0 +1,193 @@
+{
+    "bot": {
+        "name": "ChatBotMultiCanal",
+        "version": "3.0",
+        "language": "es",
+        "defaultFlow": "bienvenida",
+        "sessionVariables": {},
+        "errorFlow": "error_handler",
+        "channels": [
+            "whatsapp",
+            "telegram",
+            "web"
+        ],
+        "flows": {
+            "bienvenida": {
+                "type": "message",
+                "content": "👩‍⚕️👨‍⚕️ Bienvenido a *“CONTRA EL DENGUE”*, el ChatBot de EsSalud que te brinda información y tamizaje de Dengue. 🏥💙",
+                "next": "menu_principal"
+            },
+            "menu_principal": {
+                "type": "options",
+                "content": "Por favor selecciona una opción:",
+                "options": [
+                    {
+                        "label": "Preguntas frecuentes ❓",
+                        "value": "faq",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "label": "Registrarme 📝",
+                        "value": "registro",
+                        "next": "form_registro"
+                    },
+                    {
+                        "label": "Consultar servicios 💼",
+                        "value": "consultar_servicios",
+                        "next": "servicios_listado"
+                    },
+                    {
+                        "label": "Dar feedback ✍️",
+                        "value": "feedback",
+                        "next": "encuesta_satisfaccion"
+                    }
+                ]
+            },
+            "preguntas_frecuentes": {
+                "type": "qa",
+                "content": "Selecciona la pregunta que quieres que responda:",
+                "questions": [
+                    {
+                        "question": "¿Cuál es el horario de atención?",
+                        "answer": "Nuestro horario es de lunes a viernes de 8:00 a 18:00 hrs.",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "question": "¿Dónde están ubicados?",
+                        "answer": "Av. Ejemplo 123, Ciudad.",
+                        "next": "preguntas_frecuentes"
+                    },
+                    {
+                        "question": "Volver al menú principal",
+                        "answer": "",
+                        "next": "menu_principal"
+                    }
+                ]
+            },
+            "form_registro": {
+                "type": "form",
+                "content": "Por favor completa tus datos:",
+                "fields": [
+                    {
+                        "name": "nombre",
+                        "label": "Nombre completo",
+                        "type": "text",
+                        "required": true,
+                        "validation": {
+                            "regex": "^[a-zA-Z\\s]{3,50}$",
+                            "errorMessage": "Nombre inválido."
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "label": "Correo electrónico",
+                        "type": "email",
+                        "required": true,
+                        "validation": {
+                            "regex": "^[\\w\\-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+                            "errorMessage": "Email inválido."
+                        }
+                    },
+                    {
+                        "name": "telefono",
+                        "label": "Número de teléfono",
+                        "type": "text",
+                        "required": false,
+                        "validation": {
+                            "regex": "^\\+?[0-9]{7,15}$",
+                            "errorMessage": "Teléfono inválido."
+                        }
+                    }
+                ],
+                "onSubmit": {
+                    "service": {
+                        "endpoint": "https://api.miempresa.com/registrar",
+                        "method": "POST",
+                        "body": {
+                            "nombre": "{{nombre}}",
+                            "email": "{{email}}",
+                            "telefono": "{{telefono}}"
+                        }
+                    },
+                    "next": "registro_exitoso"
+                }
+            },
+            "registro_exitoso": {
+                "type": "message",
+                "content": "🎉 ¡Registro completado con éxito, {{nombre}}! ¿Deseas volver al menú principal?",
+                "next": "menu_principal"
+            },
+            "servicios_listado": {
+                "type": "dynamicService",
+                "content": "Estos son los servicios disponibles:",
+                "service": {
+                    "endpoint": "https://api.miempresa.com/servicios",
+                    "method": "GET",
+                    "params": {}
+                },
+                "next": "menu_principal"
+            },
+            "encuesta_satisfaccion": {
+                "type": "form",
+                "content": "Queremos conocer tu opinión sobre nuestro servicio:",
+                "fields": [
+                    {
+                        "name": "calificacion",
+                        "label": "Calificación del 1 al 5 ⭐",
+                        "type": "number",
+                        "required": true,
+                        "validation": {
+                            "min": 1,
+                            "max": 5,
+                            "errorMessage": "Debes ingresar un número entre 1 y 5."
+                        }
+                    },
+                    {
+                        "name": "comentarios",
+                        "label": "Comentarios adicionales",
+                        "type": "text",
+                        "required": false
+                    }
+                ],
+                "onSubmit": {
+                    "service": {
+                        "endpoint": "https://api.miempresa.com/feedback",
+                        "method": "POST",
+                        "body": {
+                            "usuario": "{{usuarioNombre}}",
+                            "calificacion": "{{calificacion}}",
+                            "comentarios": "{{comentarios}}"
+                        }
+                    },
+                    "next": "agradecimiento_encuesta"
+                }
+            },
+            "agradecimiento_encuesta": {
+                "type": "message",
+                "content": "🙏 Gracias por tu opinión, {{usuarioNombre}}. Esto nos ayuda a mejorar.",
+                "next": "menu_principal"
+            },
+            "condicional_ejemplo": {
+                "type": "conditional",
+                "condition": "{{edad}} >= 18",
+                "ifTrue": "mayor_edad",
+                "ifFalse": "menor_edad"
+            },
+            "mayor_edad": {
+                "type": "message",
+                "content": "Eres mayor de edad, puedes acceder a todos los servicios.",
+                "next": "menu_principal"
+            },
+            "menor_edad": {
+                "type": "message",
+                "content": "Eres menor de edad, algunos servicios pueden estar restringidos.",
+                "next": "menu_principal"
+            },
+            "error_handler": {
+                "type": "message",
+                "content": "⚠️ Lo sentimos, ocurrió un error. Por favor inténtalo nuevamente.",
+                "next": "menu_principal"
+            }
+        }
+    }
+}
