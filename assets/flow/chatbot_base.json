@@ -14,7 +14,7 @@
         "flows": {
             "bienvenida": {
                 "type": "message",
-                "content": "👩‍⚕️👨‍⚕️ Bienvenido a *“CONTRA EL DENGUE”*, el ChatBot de EsSalud que te brinda información y tamizaje de Dengue. 🏥💙",
+                "content": "👩‍⚕️👨‍⚕️ Bienvenido al ChatBot de EsSalud. 🏥💙",
                 "next": "menu_principal"
             },
             "menu_principal": {
@@ -66,7 +66,7 @@
             },
             "form_registro": {
                 "type": "form",
-                "content": "Por favor completa tus datos:",
+                "content": "",
                 "fields": [
                     {
                         "name": "nombre",

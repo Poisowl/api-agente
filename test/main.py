@@ -21,11 +21,34 @@ from pydantic import BaseModel
 # =====================================================
 
 
+class MessageData(BaseModel):
+    """Modelo para datos del mensaje según su tipo"""
+    
+    # Para ubicación
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    address: Optional[str] = None
+    
+    # Para imágenes
+    image_url: Optional[str] = None
+    image_caption: Optional[str] = None
+    
+    # Para documentos
+    document_url: Optional[str] = None
+    document_filename: Optional[str] = None
+    
+    # Para contactos
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+
+
 class ChatRequest(BaseModel):
     """Modelo para el request del chat"""
 
     user_id: str
     message: Optional[str] = None  # Puede ser None en el primer mensaje
+    message_type: str = "text"  # text, location, image, document, contact, voice
+    message_data: Optional[MessageData] = None  # Datos específicos según el tipo
     metadata: Optional[Dict[str, Any]] = None  # Solo para el primer mensaje
 
     class Config:
@@ -38,6 +61,15 @@ class ChatRequest(BaseModel):
                 },
                 {"user_id": "whatsapp_51987654321", "message": "1"},
                 {"user_id": "whatsapp_51987654321", "message": "carlos@example.com"},
+                {
+                    "user_id": "whatsapp_51987654321",
+                    "message_type": "location",
+                    "message_data": {
+                        "latitude": -12.0464,
+                        "longitude": -77.0428,
+                        "address": "Lima, Perú"
+                    }
+                },
             ]
         }
 
@@ -77,7 +109,7 @@ app.add_middleware(
 )
 
 # Inicializar el motor del chatbot
-chatbot = ChatBotEngine("chatbot.json")
+chatbot = ChatBotEngine("chatbot_base.json")
 
 
 # =====================================================
@@ -118,6 +150,7 @@ async def chat(request: ChatRequest):
     {
         "user_id": "whatsapp_51987654321",
         "message": "Hola",
+        "message_type": "text",
         "metadata": {"usuarioNombre": "Carlos"}  // Solo en primer mensaje
     }
     ```
@@ -135,12 +168,15 @@ async def chat(request: ChatRequest):
         bot_message = chatbot.process_message(
             user_id=request.user_id,
             user_message=request.message,
+            message_type=request.message_type,
+            message_data=request.message_data,
             metadata=request.metadata,
         )
         
         return ChatResponse(user_id=request.user_id, message=bot_message)
 
     except Exception as e:
+        print(f"Error en chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

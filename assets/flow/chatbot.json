@@ -37,11 +37,42 @@
                         "next": "preguntas_frecuentes"
                     },
                     {
-                        "question": "Volver al menú principal",
+                        "question": "*Ver centros de EsSalud cercanos.* 🏥",
                         "answer": "",
-                        "next": "menu_principal"
+                        "next": "form_ubicacion"
                     }
                 ]
+            },
+            "form_ubicacion": {
+                "type": "form",
+                "content": "Voy a ayudarte a encontrar el centro EsSalud más cercano a tu ubicación.",
+                "fields": [
+                    {
+                        "name": "ubicacion",
+                        "label": "Por favor, envíame tu *UBICACIÓN ACTUAL* 📍 para dirigirte al centro de *EsSalud más cercano* 🏥.",
+                        "type": "location",
+                        "required": true,
+                        "validation": {
+                            "errorMessage": "Debes enviar una ubicación válida"
+                        }
+                    }
+                ],
+                "onSubmit": {
+                    "service": {
+                        "endpoint": "http://localhost:9000/ubicacion",
+                        "method": "POST",
+                        "body": {
+                            "latitud": "{{latitud}}",
+                            "longitud": "{{longitud}}"
+                        }
+                    },
+                    "next": "registro_exitoso"
+                }
+            },
+            "registro_exitoso": {
+                "type": "message",
+                "content": "🎉 ¡Registro completado con éxito, {{nombre}}! ¿Deseas volver al menú principal?",
+                "next": "menu_principal"
             }
         }
     }

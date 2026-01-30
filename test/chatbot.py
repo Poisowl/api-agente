@@ -6,7 +6,26 @@ El bot maneja internamente todos los flujos y solo responde con mensajes de text
 import json
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
+
+# =====================================================
+# MODELOS DE DATOS PARA MENSAJES
+# =====================================================
+
+class MessageData:
+    """Clase para manejar datos de mensajes según su tipo"""
+    
+    def __init__(self, **kwargs):
+        self.latitude = kwargs.get('latitude')
+        self.longitude = kwargs.get('longitude')
+        self.address = kwargs.get('address')
+        self.image_url = kwargs.get('image_url')
+        self.image_caption = kwargs.get('image_caption')
+        self.document_url = kwargs.get('document_url')
+        self.document_filename = kwargs.get('document_filename')
+        self.contact_name = kwargs.get('contact_name')
+        self.contact_phone = kwargs.get('contact_phone')
+
 
 # =====================================================
 # CHATBOT ENGINE
@@ -16,7 +35,7 @@ from typing import Any, Dict, Optional
 class ChatBotEngine:
     """Motor del chatbot que maneja flujos internos"""
 
-    def __init__(self, bot_config_path: str = "chatbot.json"):
+    def __init__(self, bot_config_path: str = "chatbot_base.json"):
         bot_config_path = "assets/flow/" + bot_config_path
         with open(bot_config_path, "r", encoding="utf-8") as f:
             self.BOT = json.load(f)["bot"]
@@ -56,6 +75,8 @@ class ChatBotEngine:
         self,
         user_id: str,
         user_message: Optional[str] = None,
+        message_type: str = "text",
+        message_data: Optional[MessageData] = None,
         metadata: Optional[Dict] = None,
     ) -> str:
         """
@@ -72,14 +93,20 @@ class ChatBotEngine:
         session = self.get_user_session(user_id, metadata)
         session_vars = session["sessionVariables"]
 
+        
+
         # Si estamos esperando input de un formulario
         if session["waitingForInput"] == "form":
-            return self._handle_form_input(session, user_message)
+            return self._handle_form_input(session, user_message, message_type, message_data)
+
+        # Si estamos esperando una ubicación específicamente
+        if session["waitingForInput"] == "location":
+            return self._handle_location_input(session, message_type, message_data)
 
         # Procesar flujo normal
-        return self._process_flow(session, user_message)
+        return self._process_flow(session, user_message, message_type, message_data)
 
-    def _process_flow(self, session: Dict, user_input: Optional[str]) -> str:
+    def _process_flow(self, session: Dict, user_input: Optional[str], message_type: str = "text", message_data: Optional[MessageData] = None) -> str:
         """Procesa el flujo actual"""
         current_flow = session["currentFlow"]
         session_vars = session["sessionVariables"]
@@ -87,7 +114,7 @@ class ChatBotEngine:
         flow = self.BOT["flows"].get(current_flow)
         if not flow:
             session["currentFlow"] = self.BOT["errorFlow"]
-            return self._process_flow(session, None)
+            return self._process_flow(session, None, message_type, message_data)
 
         try:
             flow_type = flow["type"]
@@ -101,7 +128,7 @@ class ChatBotEngine:
                 # Si el siguiente flujo existe, continuar
                 next_flow_obj = self.BOT["flows"].get(next_flow)
                 if next_flow_obj:
-                    next_message = self._process_flow(session, None)
+                    next_message = self._process_flow(session, None, message_type, message_data)
                     return f"{message}\n\n{next_message}"
 
                 return message
@@ -121,7 +148,7 @@ class ChatBotEngine:
                             session["currentFlow"] = options[idx].get(
                                 "next", self.BOT["defaultFlow"]
                             )
-                            return self._process_flow(session, None)
+                            return self._process_flow(session, None, message_type, message_data)
 
                     # Buscar por valor o por label
                     for opt in options:
@@ -132,7 +159,7 @@ class ChatBotEngine:
                             session["currentFlow"] = opt.get(
                                 "next", self.BOT["defaultFlow"]
                             )
-                            return self._process_flow(session, None)
+                            return self._process_flow(session, None, message_type, message_data)
 
                     # Opción inválida
                     return f"❌ Opción inválida. {self._format_options(options, flow, session_vars)}"
@@ -160,10 +187,10 @@ class ChatBotEngine:
                                 q.get("answer", ""), session_vars
                             )
                             if answer:
-                                next_message = self._process_flow(session, None)
+                                next_message = self._process_flow(session, None, message_type, message_data)
                                 return f"{answer}\n\n{next_message}"
                             else:
-                                return self._process_flow(session, None)
+                                return self._process_flow(session, None, message_type, message_data)
 
                     # Buscar la pregunta
                     for q in questions:
@@ -175,10 +202,10 @@ class ChatBotEngine:
                                 q.get("answer", ""), session_vars
                             )
                             if answer:
-                                next_message = self._process_flow(session, None)
+                                next_message = self._process_flow(session, None, message_type, message_data)
                                 return f"{answer}\n\n{next_message}"
                             else:
-                                return self._process_flow(session, None)
+                                return self._process_flow(session, None, message_type, message_data)
 
                     # Pregunta no encontrada
                     return f"❌ Pregunta no reconocida. {self._format_qa(questions, flow, session_vars)}"
@@ -192,8 +219,18 @@ class ChatBotEngine:
 
                 # Iniciar el formulario
                 if session["currentFormField"] is None:
-                    session["waitingForInput"] = "form"
-                    session["currentFormField"] = fields[0] if fields else None
+                    first_field = fields[0] if fields else None
+                    if not first_field:
+                        return "Error: Formulario sin campos"
+                    
+                    # Verificar si el primer campo requiere un tipo específico
+                    field_type = first_field.get("type", "text")
+                    if field_type == "location":
+                        session["waitingForInput"] = "location"
+                    else:
+                        session["waitingForInput"] = "form"
+                    
+                    session["currentFormField"] = first_field
                     session["formFieldIndex"] = 0
                     session["pendingFormData"] = {}
                     session["currentFlowData"] = flow  # Guardar el flow completo
@@ -201,10 +238,13 @@ class ChatBotEngine:
                     intro = self.replace_variables(
                         flow.get("content", ""), session_vars
                     )
-                    first_field = fields[0]
                     required = " (*)" if first_field.get("required") else ""
 
-                    return f"{intro}\n\n📝 {first_field['label']}{required}"
+                    # Mensaje específico según el tipo
+                    if field_type == "location":
+                        return f"{intro}\n\n📍 {first_field['label']}{required}\n\nPor favor, envía tu ubicación actual"
+                    else:
+                        return f"{intro}\n\n📝 {first_field['label']}{required}"
 
                 # Este caso no debería ocurrir aquí, se maneja en _handle_form_input
                 return "Error en el flujo del formulario"
@@ -219,10 +259,10 @@ class ChatBotEngine:
                     cond_eval = eval(condition_str, {"__builtins__": {}}, session_vars)
                     next_flow = flow.get("ifTrue") if cond_eval else flow.get("ifFalse")
                     session["currentFlow"] = next_flow
-                    return self._process_flow(session, None)
+                    return self._process_flow(session, None, message_type, message_data)
                 except:
                     session["currentFlow"] = self.BOT["errorFlow"]
-                    return self._process_flow(session, None)
+                    return self._process_flow(session, None, message_type, message_data)
 
             # -------------------- Dynamic Service --------------------
             elif flow_type == "dynamicService":
@@ -239,16 +279,53 @@ class ChatBotEngine:
                 )
 
                 session["currentFlow"] = flow.get("next", self.BOT["defaultFlow"])
-                next_message = self._process_flow(session, None)
+                next_message = self._process_flow(session, None, message_type, message_data)
 
                 return f"{content}\n{data_text}\n\n{next_message}"
 
         except Exception as e:
             print(f"Error en flujo {current_flow}: {str(e)}")
             session["currentFlow"] = self.BOT["errorFlow"]
-            return self._process_flow(session, None)
+            return self._process_flow(session, None, message_type, message_data)
 
-    def _handle_form_input(self, session: Dict, user_input: str) -> str:
+    def _advance_form_field(self, session: Dict, flow: Dict, fields: list, session_vars: Dict) -> str:
+        """Avanza al siguiente campo del formulario o lo completa"""
+        # Avanzar al siguiente campo
+        next_index = session["formFieldIndex"] + 1
+
+        if next_index < len(fields):
+            # Hay más campos
+            session["formFieldIndex"] = next_index
+            session["currentFormField"] = fields[next_index]
+
+            next_field = fields[next_index]
+            field_type = next_field.get("type", "text")
+            required = " (*)" if next_field.get("required") else ""
+
+            # Mensaje específico según el tipo
+            if field_type == "location":
+                return f"✅ Guardado.\n\n📍 {next_field['label']}{required}\n\nPor favor, envía tu ubicación actual"
+            else:
+                return f"✅ Guardado.\n\n📝 {next_field['label']}{required}"
+        else:
+            # Formulario completado
+            session["waitingForInput"] = None
+            session["currentFormField"] = None
+            session["formFieldIndex"] = 0
+
+            # Procesar onSubmit si existe
+            on_submit = flow.get("onSubmit")
+            if on_submit:
+                session["currentFlow"] = on_submit.get("next", self.BOT["defaultFlow"])
+            else:
+                session["currentFlow"] = flow.get("next", self.BOT["defaultFlow"])
+
+            session["pendingFormData"] = {}
+
+            return self._process_flow(session, None, "text", None)
+
+
+    def _handle_form_input(self, session: Dict, user_input: Optional[str], message_type: str = "text", message_data: Optional[MessageData] = None) -> str:
         """Maneja la entrada de datos de un formulario campo por campo"""
         if not user_input:
             return "Por favor, proporciona un valor para este campo."
@@ -258,8 +335,29 @@ class ChatBotEngine:
         fields = flow["fields"]
         session_vars = session["sessionVariables"]
 
-        # Validar el input
-        validation = current_field.get("validation")
+        # Manejo especial para ubicaciones
+        field_type = current_field.get("type", "text")
+        
+        if field_type == "location":
+            if message_type != "location" or not message_data:
+                return "❌ Por favor, envía tu ubicación actual usando el botón de ubicación de WhatsApp"
+            
+            # Procesar ubicación
+            location_text = f"{message_data.latitude}, {message_data.longitude}"
+            if message_data.address:
+                location_text += f" ({message_data.address})"
+            
+            # Guardar el valor
+            field_name = current_field["name"]
+            session["pendingFormData"][field_name] = location_text
+            session_vars[field_name] = location_text
+            
+            # Continuar con el siguiente campo o finalizar
+            return self._advance_form_field(session, flow, fields, session_vars)
+
+        # Validación normal para texto
+        if not user_input:
+            return "Por favor, proporciona un valor para este campo."
 
         if validation:
             # Validar regex
@@ -306,39 +404,8 @@ class ChatBotEngine:
         session["pendingFormData"][field_name] = user_input
         session_vars[field_name] = user_input
 
-        # Avanzar al siguiente campo
-        next_index = session["formFieldIndex"] + 1
-
-        if next_index < len(fields):
-            # Hay más campos
-            session["formFieldIndex"] = next_index
-            session["currentFormField"] = fields[next_index]
-
-            next_field = fields[next_index]
-            required = " (*)" if next_field.get("required") else ""
-
-            return f"✅ Guardado.\n\n📝 {next_field['label']}{required}"
-        else:
-            # Formulario completado
-            session["waitingForInput"] = None
-            session["currentFormField"] = None
-            session["formFieldIndex"] = 0
-
-            # Procesar onSubmit si existe
-            on_submit = flow.get("onSubmit")
-            if on_submit:
-                # Aquí se podría llamar al servicio externo
-                # service = on_submit.get("service")
-                # if service:
-                #     call_external_service(service, session["pendingFormData"])
-
-                session["currentFlow"] = on_submit.get("next", self.BOT["defaultFlow"])
-            else:
-                session["currentFlow"] = flow.get("next", self.BOT["defaultFlow"])
-
-            session["pendingFormData"] = {}
-
-            return self._process_flow(session, None)
+        # Avanzar al siguiente campo o finalizar
+        return self._advance_form_field(session, flow, fields, session_vars)
 
     def _format_options(self, options: list, flow: dict, session_vars: dict) -> str:
         """Formatea las opciones como texto"""
@@ -348,6 +415,27 @@ class ChatBotEngine:
         )
 
         return f"{content}\n{options_text}\n\n💡 Responde con el número o nombre de la opción"
+
+    def _handle_location_input(self, session: Dict, message_type: str, message_data: Optional[MessageData]) -> str:
+        """Maneja la entrada de ubicaciones cuando se espera una"""
+        if message_type != "location" or not message_data:
+            return "❌ Por favor, envía tu ubicación actual usando el botón de ubicación de WhatsApp"
+        
+        # Procesar la ubicación
+        location_text = f"{message_data.latitude}, {message_data.longitude}"
+        if message_data.address:
+            location_text += f" ({message_data.address})"
+        
+        # Guardar en variables de sesión
+        session["sessionVariables"]["ubicacion"] = location_text
+        session["sessionVariables"]["latitud"] = message_data.latitude
+        session["sessionVariables"]["longitud"] = message_data.longitude
+        
+        # Limpiar el estado de espera
+        session["waitingForInput"] = None
+        
+        # Continuar con el siguiente flujo
+        return "✅ Ubicación recibida correctamente. Procesando..."
 
     def _format_qa(self, questions: list, flow: dict, session_vars: dict) -> str:
         """Formatea las preguntas como texto"""
